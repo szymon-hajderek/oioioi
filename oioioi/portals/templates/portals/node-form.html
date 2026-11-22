@@ -22,100 +22,53 @@
 
     {% include "ingredients/markdown-editor.html" %}
     <script>
-        function replaceSelectionOutside(e, prefix, defaultValue, suffix) {
-            let selected = e.getSelection();
-            let textSize = selected.length;
-            let cursor = selected.start;
-            if (textSize <= 0) {
-                e.replaceSelection(defaultValue);
-                textSize = defaultValue.length;
-            }
-            e.setSelection(cursor, cursor);
-            e.replaceSelection(prefix);
-            cursor += prefix.length + textSize;
-            e.setSelection(cursor, cursor);
-            e.replaceSelection(suffix);
-            cursor -= textSize;
-            e.setSelection(cursor, cursor + textSize);
+        function renderPanel(text) {
+            const data = new FormData();
+            data.append('markdown', text);
+            data.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            return fetch('{% url "render_markdown" %}', { method: 'POST', body: data })
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('render_markdown returned ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(function (data) {
+                    return data.rendered;
+                });
         }
-        $(function() {
-            $('textarea[id*="-panel_code"]').markdown({
-                onPreview: function(e) {
-                    const originalContent = e.getContent();
-                    let rendered = originalContent;
 
-                    $.ajax({
-                      type: 'POST',
-                      url: '{% url "render_markdown" %}',
-                      data: {
-                          markdown: originalContent,
-                          csrfmiddlewaretoken: '{{ csrf_token }}'
-                      },
-                      success: function (data) {
-                          rendered = data.rendered;
-                      },
-                      async: false
-                    });
-                    // We need to make sure that MathJax typesetting
-                    // happens only after the Markdown editor applied
-                    // the changes to the document, so we push the job
-                    // to the end of the JavaScript browser queue using
-                    // the setTimeout function.
-                    setTimeout(function(){
-                        MathJax.Hub.Queue(["Typeset", MathJax.Hub, "#{{ form.panel_code.id_for_label }}"]);
-                    }, 0);
-                    return rendered;
-                },
-                additionalButtons: [
-                    [
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('textarea[id*="-panel_code"]').forEach(function (textarea) {
+                initMarkdownEditor(textarea, {
+                    render: renderPanel,
+                    buttons: [
                         {
-                            name: "oioioiGroup",
-                            data: [
-                                {
-                                    name: "cmdYoutube",
-                                    title: "YouTube",
-                                    icon: {
-                                        fa: 'fa fa-play'
-                                    },
-                                    callback: function (e) {
-                                        e.replaceSelection('[[YouTube|<url>]]');
-                                    }
-                                },
-                                {
-                                    name: "cmdProblemTable",
-                                    title: '{% trans "Problem Table" %}',
-                                    icon: {
-                                        fa: 'fa fa-table-list'
-                                    },
-                                    callback: function (e) {
-                                        e.replaceSelection('[[ProblemTable|url1;url2;...]]');
-                                    }
-                                },
-                                {
-                                    name: "cmdInlineMathJax",
-                                    title: '{% trans "Inline math mode" %}',
-                                    icon: {
-                                        fa: 'fa fa-square-root-variable'
-                                    },
-                                    callback: function (e) {
-                                        replaceSelectionOutside(e, "\\\\(", "<mathjax>", "\\\\)");
-                                    }
-                                },
-                                {
-                                    name: "cmdOutOfLineMathJax",
-                                    title: '{% trans "Math mode" %}',
-                                    icon: {
-                                        fa: 'fa fa-bars-staggered'
-                                    },
-                                    callback: function (e) {
-                                        replaceSelectionOutside(e, "$$", "<mathjax>", "$$");
-                                    }
-                                }
-                            ]
+                            title: 'YouTube',
+                            icon: 'fa-play',
+                            insert: '[[YouTube|<url>]]'
+                        },
+                        {
+                            title: '{% trans "Problem Table" %}',
+                            icon: 'fa-table-list',
+                            insert: '[[ProblemTable|url1;url2;...]]'
+                        },
+                        {
+                            title: '{% trans "Inline math mode" %}',
+                            icon: 'fa-square-root-variable',
+                            // In Markdown, \( is an escaped bracket, so MathJax needs \\(.
+                            wrap: ['\\\\(', '\\\\)'],
+                            placeholder: '<mathjax>'
+                        },
+                        {
+                            title: '{% trans "Math mode" %}',
+                            icon: 'fa-bars-staggered',
+                            wrap: ['$$', '$$'],
+                            placeholder: '<mathjax>'
                         }
                     ]
-                ]
-            })
+                });
+            });
         });
 
         new TranslationFormset({

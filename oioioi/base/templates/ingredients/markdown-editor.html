@@ -1,21 +1,18 @@
 {% load static %}
 
-<link rel="stylesheet" href="{% static 'bootstrap-markdown/css/bootstrap-markdown.min.css' %}"/>
-<script src="{% static 'marked/marked.min.js' %}"></script>
-<script src="{% static 'bootstrap-markdown/js/bootstrap-markdown.js' %}"></script>
-<script>
-    $.fn.markdown.defaults.parser = marked.parse
-    $.fn.markdown.defaults.iconlibrary = 'fa'
-</script>
+<script src="{% static 'markdown_editor.bundle.js' %}"></script>
 {% comment %}
     After including markdown add codesnippet to change `<textarea id="editor"></textarea>`
-    into a markdown editor.
+    into a markdown editor (see markdown-editor.js for the options).
 
     ```
     <script>
-    $(function () {
-        $("#editor").markdown();
+    document.addEventListener('DOMContentLoaded', function () {
+        initMarkdownEditor(document.getElementById('editor'));
     });
     </script>
     ```
+
+    The editor uses `gettext`, which base.html loads at the end of the page,
+    so call it once the page has loaded.
 {% endcomment %}

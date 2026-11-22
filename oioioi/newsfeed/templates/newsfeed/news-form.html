@@ -16,7 +16,9 @@
         requiredFieldsSelector: '[id*="title"], [id*="content"]'
     });
 
-    $(function () {
-        $('textarea[id*="-content"]').markdown();
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('textarea[id*="-content"]').forEach(function (textarea) {
+            initMarkdownEditor(textarea);
+        });
     });
 </script>

@@ -1,8 +1,42 @@
 $markdown-editor-padding: 10px !default;
 
-// Fixes markdown editor styles
+// Markdown editor (markdown-editor.js): Write/Preview tabs, then the toolbar
+// and the textarea, or the preview.
 
-.oioioi-form-field .md-editor > textarea,
-.md-preview {
-  padding: $markdown-editor-padding;
+.md-editor {
+  > .md-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.25rem 0;
+    border-left: var(--bs-border-width) solid var(--bs-border-color);
+    border-right: var(--bs-border-width) solid var(--bs-border-color);
+  }
+
+  .md-toolbar-group {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0 0.25rem;
+
+    + .md-toolbar-group {
+      border-left: var(--bs-border-width) solid var(--bs-border-color);
+    }
+  }
+
+  > textarea,
+  > .md-preview {
+    padding: $markdown-editor-padding;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+
+  > .md-preview {
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-top: 0;
+    border-radius: 0 0 var(--bs-border-radius) var(--bs-border-radius);
+    overflow-wrap: anywhere;
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+  }
 }

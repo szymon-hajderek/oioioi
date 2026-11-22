@@ -11,6 +11,9 @@ importers:
       '@eonasdan/tempus-dominus':
         specifier: ^6.10.2
         version: 6.10.4(@popperjs/core@2.11.8)
+      '@github/markdown-toolbar-element':
+        specifier: ^2.2.3
+        version: 2.2.3
       ace-builds:
         specifier: 1.4.14
         version: 1.4.14
@@ -20,9 +23,6 @@ importers:
       bootstrap-3-typeahead:
         specifier: ^4.0.2
         version: 4.0.2
-      bootstrap-markdown:
-        specifier: ^2.10.0
-        version: 2.10.0
       clipboard:
         specifier: ^2.0.11
         version: 2.0.11
@@ -164,6 +164,9 @@ packages:
   '@eslint/plugin-kit@0.7.3':
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@github/markdown-toolbar-element@2.2.3':
+    resolution: {integrity: sha512-AlquKGee+IWiAMYVB0xyHFZRMnu4n3X4HTvJHu79GiVJ1ojTukCWyxMlF5NMsecoLcBKsuBhx3QPv2vkE/zQ0A==}
 
   '@hapi/address@5.1.1':
     resolution: {integrity: sha512-A+po2d/dVoY7cYajycYI43ZbYMXukuopIsqCjh5QzsBCipDtdofHntljDlpccMjIfTy6UOkg+5KPriwYch2bXA==}
@@ -429,9 +432,6 @@ packages:
   bootstrap-3-typeahead@4.0.2:
     resolution: {integrity: sha512-cy1RiQ8wC1p8mM9D+hqlIZAc3llE8ddrF6lw6AhfhbF1YvqA0OrztZYMfPxPlZp1crEXE53IwyYNxehuAIWvew==}
     engines: {node: ~0.10.1}
-
-  bootstrap-markdown@2.10.0:
-    resolution: {integrity: sha512-dh2uKRsa8Fjy+oZNndproaJx0hFmV4SdpU/d/4kH+QggA6iVEiEE7Ga4Fb0BOpnhfagcCRI6eBAgmJtHELh+rg==}
 
   bootstrap@5.3.9:
     resolution: {integrity: sha512-20cU0rcfw8WdxtVbmfU+xT2EjvVTw9Ror/h1Qvd7DXCujRg8OO9mdBCsmTHdJFf3BuadmBNJtgIuUXsBqSkk/w==}
@@ -1685,6 +1685,8 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
+  '@github/markdown-toolbar-element@2.2.3': {}
+
   '@hapi/address@5.1.1':
     dependencies:
       '@hapi/hoek': 11.0.7
@@ -1960,8 +1962,6 @@ snapshots:
   bluebird@3.7.2: {}
 
   bootstrap-3-typeahead@4.0.2: {}
-
-  bootstrap-markdown@2.10.0: {}
 
   bootstrap@5.3.9(@popperjs/core@2.11.8):
     dependencies:
