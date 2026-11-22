@@ -1,9 +1,11 @@
 {% load static %}
 
-<script src="{% static 'markdown_editor.bundle.js' %}"></script>
+<script src="{% static 'markdown-editor.bundle.js' %}"></script>
 {% comment %}
-    After including markdown add codesnippet to change `<textarea id="editor"></textarea>`
-    into a markdown editor (see markdown-editor.js for the options).
+    Loads the Markdown editor. To turn a textarea into an editor, call
+    `initMarkdownEditor(textarea, options)` once the page has loaded (the editor
+    uses `gettext`, which base.html loads at the end of the page). The options
+    are described in markdown-editor.js.
 
     ```
     <script>
@@ -12,7 +14,4 @@
     });
     </script>
     ```
-
-    The editor uses `gettext`, which base.html loads at the end of the page,
-    so call it once the page has loaded.
 {% endcomment %}

@@ -46,12 +46,14 @@
                         {
                             title: 'YouTube',
                             icon: 'fa-play',
-                            insert: '[[YouTube|<url>]]'
+                            wrap: ['[[YouTube|', ']]'],
+                            placeholder: '<url>'
                         },
                         {
                             title: '{% trans "Problem Table" %}',
                             icon: 'fa-table-list',
-                            insert: '[[ProblemTable|url1;url2;...]]'
+                            wrap: ['[[ProblemTable|', ']]'],
+                            placeholder: 'url1;url2;...'
                         },
                         {
                             title: '{% trans "Inline math mode" %}',

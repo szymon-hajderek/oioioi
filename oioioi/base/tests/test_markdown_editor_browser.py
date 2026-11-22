@@ -69,6 +69,22 @@ class TestMarkdownEditor(BrowserTestCase):
         editor.get_by_role("button", name="Math mode", exact=True).click()
         self.assertEqual(textarea.input_value(), "$$<mathjax>$$")
 
+    def test_portal_youtube_button_selects_the_url(self):
+        page = self.open(portal_url(portal=Portal.objects.get(owner__username="test_user"), action="edit_node"), "test_user")
+        editor = page.locator(".md-editor").first
+        textarea = editor.locator("textarea")
+        selection = "t => t.value.slice(t.selectionStart, t.selectionEnd)"
+
+        textarea.fill("")
+        editor.get_by_role("button", name="YouTube").click()
+        self.assertEqual(textarea.input_value(), "[[YouTube|<url>]]")
+        self.assertEqual(textarea.evaluate(selection), "<url>")
+
+        textarea.fill("https://youtu.be/x")
+        textarea.select_text()
+        editor.get_by_role("button", name="YouTube").click()
+        self.assertEqual(textarea.input_value(), "[[YouTube|https://youtu.be/x]]")
+
     def test_portal_preview_is_rendered_by_the_server(self):
         page = self.open(portal_url(portal=Portal.objects.get(owner__username="test_user"), action="edit_node"), "test_user")
         editor = page.locator(".md-editor").first

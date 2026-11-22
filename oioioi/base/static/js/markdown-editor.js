@@ -7,9 +7,9 @@ import { marked } from "marked";
 // Options:
 //     - 'render': a function taking the Markdown text and returning the preview HTML,
 //       or a Promise of it (default: render in the browser with marked),
-//     - 'buttons': extra toolbar buttons, objects with 'title', 'icon' (Font Awesome classes)
-//       and either 'insert' (text replacing the selection) or 'wrap' ([prefix, suffix] put
-//       around the selection, or around 'placeholder' if nothing is selected).
+//     - 'buttons': extra toolbar buttons, objects with 'title', 'icon' (Font Awesome classes),
+//       'wrap' ([prefix, suffix] put around the selection) and optionally 'placeholder'
+//       (put between them and selected if nothing is selected).
 
 const STANDARD_BUTTONS = [
     ["md-header", "fa-heading", () => gettext("Heading")],
@@ -34,7 +34,7 @@ function createElement(tag, className, attributes = {}) {
     return element;
 }
 
-function createButton(tag, title, icon) {
+function createIconButton(tag, title, icon) {
     const button = createElement(tag, "btn btn-sm btn-outline-secondary border-0", { title: title, "aria-label": title });
     if (tag === "button") {
         button.type = "button";
@@ -46,31 +46,42 @@ function createButton(tag, title, icon) {
     return button;
 }
 
-// Replaces the textarea's selection with 'text' and selects the range
-// [start, end) of the inserted text (the cursor goes after it by default).
-function replaceSelection(textarea, text, start = text.length, end = start) {
-    const offset = textarea.selectionStart;
+function createTab(label) {
+    const tab = createElement("button", "nav-link", { type: "button", role: "tab" });
+    tab.textContent = label;
+    return tab;
+}
+
+// Puts 'prefix' and 'suffix' around the textarea's selection (or around 'placeholder'
+// if nothing is selected) and selects what is between them.
+function wrapSelection(textarea, prefix, suffix, placeholder) {
+    const start = textarea.selectionStart;
+    const selected = textarea.value.slice(start, textarea.selectionEnd) || placeholder;
+    const text = prefix + selected + suffix;
+
     textarea.focus();
-    // execCommand keeps the browser's undo history; setRangeText is the fallback.
-    if (!document.execCommand("insertText", false, text)) {
+    // execCommand is deprecated, but it is the only way to keep the browser's undo history.
+    let inserted = false;
+    try {
+        inserted = document.execCommand("insertText", false, text);
+    } catch (error) {
+        console.error(error);
+    }
+    if (!inserted) {
         textarea.setRangeText(text);
         textarea.dispatchEvent(new Event("input", { bubbles: true }));
     }
-    textarea.setSelectionRange(offset + start, offset + end);
-}
-
-function applyButton(textarea, button) {
-    if (button.insert !== undefined) {
-        replaceSelection(textarea, button.insert);
-    } else {
-        const [prefix, suffix] = button.wrap;
-        const selected = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd) || button.placeholder || "";
-        replaceSelection(textarea, prefix + selected + suffix, prefix.length, prefix.length + selected.length);
-    }
+    textarea.setSelectionRange(start + prefix.length, start + prefix.length + selected.length);
 }
 
 window.initMarkdownEditor = function (textarea, options = {}) {
     const render = options.render || ((text) => marked.parse(text));
+    const buttons = options.buttons || [];
+    for (const button of buttons) {
+        if (!Array.isArray(button.wrap) || button.wrap.length !== 2) {
+            throw new Error("Markdown editor button '" + button.title + "' needs 'wrap': [prefix, suffix]");
+        }
+    }
     if (!textarea.id) {
         textarea.id = "markdown-editor-" + ++editorCount;
     }
@@ -79,13 +90,9 @@ window.initMarkdownEditor = function (textarea, options = {}) {
     const tabs = createElement("ul", "nav nav-tabs", { role: "tablist" });
     const toolbar = createElement("markdown-toolbar", "md-toolbar", { for: textarea.id });
     const preview = createElement("div", "md-preview", { role: "tabpanel" });
-    preview.hidden = true;
 
-    const writeTab = createElement("button", "nav-link active", { type: "button", role: "tab", "aria-selected": "true" });
-    writeTab.textContent = gettext("Write");
-    const previewTab = createElement("button", "nav-link", { type: "button", role: "tab", "aria-selected": "false" });
-    previewTab.textContent = gettext("Preview");
-    for (const tab of [writeTab, previewTab]) {
+    const tabsByMode = { write: createTab(gettext("Write")), preview: createTab(gettext("Preview")) };
+    for (const tab of Object.values(tabsByMode)) {
         const item = createElement("li", "nav-item", { role: "presentation" });
         item.appendChild(tab);
         tabs.appendChild(item);
@@ -93,15 +100,15 @@ window.initMarkdownEditor = function (textarea, options = {}) {
 
     const standardGroup = createElement("div", "md-toolbar-group");
     for (const [tag, icon, title] of STANDARD_BUTTONS) {
-        standardGroup.appendChild(createButton(tag, title(), icon));
+        standardGroup.appendChild(createIconButton(tag, title(), icon));
     }
     toolbar.appendChild(standardGroup);
-    if (options.buttons && options.buttons.length) {
+    if (buttons.length) {
         const customGroup = createElement("div", "md-toolbar-group");
-        for (const button of options.buttons) {
-            const element = createButton("button", button.title, button.icon);
+        for (const button of buttons) {
+            const element = createIconButton("button", button.title, button.icon);
             element.setAttribute("data-md-button", "");
-            element.addEventListener("click", () => applyButton(textarea, button));
+            element.addEventListener("click", () => wrapSelection(textarea, button.wrap[0], button.wrap[1], button.placeholder || ""));
             customGroup.appendChild(element);
         }
         toolbar.appendChild(customGroup);
@@ -113,16 +120,34 @@ window.initMarkdownEditor = function (textarea, options = {}) {
     textarea.before(editor);
     editor.append(tabs, toolbar, textarea, preview);
 
-    // Responses to older preview requests are ignored.
+    let mode = null;
+
+    // Shows the tab of 'newMode' ("write" or "preview") and what belongs to it.
+    function switchMode(newMode) {
+        if (newMode === "preview") {
+            // Take the place of the toolbar and the textarea, so the page does not jump.
+            preview.style.minHeight = toolbar.offsetHeight + textarea.offsetHeight + "px";
+        }
+        mode = newMode;
+        for (const [tabMode, tab] of Object.entries(tabsByMode)) {
+            tab.classList.toggle("active", tabMode === mode);
+            tab.setAttribute("aria-selected", tabMode === mode ? "true" : "false");
+        }
+        toolbar.hidden = mode === "preview";
+        textarea.hidden = mode === "preview";
+        preview.hidden = mode !== "preview";
+    }
+
+    // Each preview request gets a number; its response is shown only if no newer
+    // request was made and the preview was not cancelled in the meantime.
     let previewRequest = 0;
 
-    async function showPreview() {
+    function cancelPreview() {
+        ++previewRequest;
+    }
+
+    async function renderPreview() {
         const request = ++previewRequest;
-        // Take the place of the toolbar and the textarea, so the page does not jump.
-        preview.style.minHeight = toolbar.offsetHeight + textarea.offsetHeight + "px";
-        textarea.hidden = true;
-        toolbar.hidden = true;
-        preview.hidden = false;
         preview.textContent = gettext("Loading...");
 
         let html;
@@ -146,33 +171,28 @@ window.initMarkdownEditor = function (textarea, options = {}) {
         }
         preview.innerHTML = html;
         if (mathJax && mathJax.typesetPromise) {
-            await mathJax.typesetPromise([preview]);
+            try {
+                await mathJax.typesetPromise([preview]);
+            } catch (error) {
+                // The preview stays, only with the TeX source in place of the math.
+                console.error(error);
+            }
         }
     }
 
-    function showWrite() {
-        ++previewRequest;
-        preview.hidden = true;
-        textarea.hidden = false;
-        toolbar.hidden = false;
-        textarea.focus();
-    }
+    tabsByMode.write.addEventListener("click", () => {
+        if (mode !== "write") {
+            cancelPreview();
+            switchMode("write");
+            textarea.focus();
+        }
+    });
+    tabsByMode.preview.addEventListener("click", () => {
+        if (mode !== "preview") {
+            switchMode("preview");
+            renderPreview();
+        }
+    });
 
-    function selectTab(tab) {
-        if (tab.classList.contains("active")) {
-            return;
-        }
-        for (const other of [writeTab, previewTab]) {
-            other.classList.toggle("active", other === tab);
-            other.setAttribute("aria-selected", other === tab ? "true" : "false");
-        }
-        if (tab === previewTab) {
-            showPreview();
-        } else {
-            showWrite();
-        }
-    }
-
-    writeTab.addEventListener("click", () => selectTab(writeTab));
-    previewTab.addEventListener("click", () => selectTab(previewTab));
+    switchMode("write");
 };
