@@ -18,7 +18,24 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('textarea[id*="-content"]').forEach(function (textarea) {
-            initMarkdownEditor(textarea);
+            // Math in news is supported (MathJax typesets it), so the toolbar has buttons for it.
+            initMarkdownEditor(textarea, {
+                buttons: [
+                    {
+                        title: '{% trans "Inline math mode" %}',
+                        icon: 'fa-square-root-variable',
+                        // In Markdown, \( is an escaped bracket, so MathJax needs \\(.
+                        wrap: ['\\\\(', '\\\\)'],
+                        placeholder: '<mathjax>'
+                    },
+                    {
+                        title: '{% trans "Math mode" %}',
+                        icon: 'fa-bars-staggered',
+                        wrap: ['$$', '$$'],
+                        placeholder: '<mathjax>'
+                    }
+                ]
+            });
         });
     });
 </script>
